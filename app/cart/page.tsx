@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,7 @@ export default function CartPage() {
   const items = useQuery(api.cart.getMyCart);
   const updateQuantity = useMutation(api.cart.updateQuantity);
   const removeItem = useMutation(api.cart.removeItem);
-  const createCheckout = useMutation(api.stripe.createCheckoutSession);
+  const createCheckout = useAction(api.stripe.createCheckoutSession);
   const [checkingOut, setCheckingOut] = useState(false);
 
   if (items === undefined) {
