@@ -1,11 +1,46 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function AdminDashboard() {
   const stats = useQuery(api.admin.getSalesStats);
+  const claimFirstAdmin = useMutation(api.users.claimFirstAdmin);
+  const currentUser = useQuery(api.users.current);
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState("");
+
+  // 권한 없음 — admin 아닌 유저
+  if (stats instanceof Error || (currentUser !== undefined && (currentUser?.role ?? "user") !== "admin")) {
+    return (
+      <main className="p-8 max-w-md mx-auto mt-20 text-center">
+        <p className="text-2xl font-bold mb-2">접근 권한 없음</p>
+        <p className="text-slate-500 mb-6">관리자 계정이 아닙니다.</p>
+        <button
+          onClick={async () => {
+            setClaiming(true);
+            setClaimError("");
+            try {
+              await claimFirstAdmin({});
+              window.location.reload();
+            } catch (e: unknown) {
+              setClaimError(e instanceof Error ? e.message : "오류가 발생했습니다.");
+            } finally {
+              setClaiming(false);
+            }
+          }}
+          disabled={claiming}
+          className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 text-white px-6 py-2 rounded-xl"
+        >
+          {claiming ? "처리 중..." : "첫 번째 관리자로 설정"}
+        </button>
+        {claimError && <p className="text-red-500 mt-3 text-sm">{claimError}</p>}
+        <p className="text-xs text-slate-400 mt-4">이미 관리자가 존재하면 이 버튼은 작동하지 않습니다.</p>
+      </main>
+    );
+  }
 
   if (stats === undefined) {
     return (

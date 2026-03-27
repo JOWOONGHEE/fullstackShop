@@ -54,8 +54,29 @@ export const setRole = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
     const caller = await userByExternalId(ctx, identity.subject);
-    if (!caller || caller.role !== "admin") throw new Error("Unauthorized");
+    if (!caller || (caller.role ?? "user") !== "admin") throw new Error("Unauthorized");
     await ctx.db.patch(args.userId, { role: args.role });
+  },
+});
+
+// 관리자가 한 명도 없을 때 현재 로그인 유저를 admin으로 승격
+// 개발 초기 설정용 — 이미 admin이 존재하면 실패
+export const claimFirstAdmin = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+
+    const adminExists = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("role"), "admin"))
+      .first();
+    if (adminExists) throw new Error("Admin already exists");
+
+    const me = await userByExternalId(ctx, identity.subject);
+    if (!me) throw new Error("User not found");
+    await ctx.db.patch(me._id, { role: "admin" });
+    return me._id;
   },
 });
 
