@@ -1,21 +1,19 @@
 "use client";
 
-import { useQuery, useMutation, useAction } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/components/Toast";
 
 export default function CartPage() {
-  const router = useRouter();
   const { showToast } = useToast();
   const items = useQuery(api.cart.getMyCart);
   const updateQuantity = useMutation(api.cart.updateQuantity);
   const removeItem = useMutation(api.cart.removeItem);
   const clearCart = useMutation(api.cart.clearCart);
-  const createCheckout = useAction(api.stripe.createCheckoutSession);
+  const createPendingOrder = useMutation(api.tossOrders.createPendingOrder);
   const [checkingOut, setCheckingOut] = useState(false);
 
   if (items === undefined) {
@@ -41,10 +39,25 @@ export default function CartPage() {
   async function handleCheckout() {
     setCheckingOut(true);
     try {
-      const url = await createCheckout({});
-      if (url) window.location.href = url;
-    } catch {
-      showToast("결제 중 오류가 발생했습니다.", "error");
+      const { orderId, totalAmount, orderName } = await createPendingOrder({});
+      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+      if (!clientKey) throw new Error("NEXT_PUBLIC_TOSS_CLIENT_KEY not configured");
+      const { loadTossPayments } = await import("@tosspayments/tosspayments-sdk");
+      const tossPayments = await loadTossPayments(clientKey);
+      const payment = tossPayments.payment({ customerKey: "GUEST_" + Date.now() });
+      await payment.requestPayment({
+        method: "CARD",
+        amount: { currency: "KRW", value: totalAmount },
+        orderId,
+        orderName,
+        successUrl: `${window.location.origin}/checkout/success`,
+        failUrl: `${window.location.origin}/checkout/fail`,
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "결제 중 오류가 발생했습니다.";
+      if (!msg.includes("PAY_PROCESS_CANCELED")) {
+        showToast(msg, "error");
+      }
       setCheckingOut(false);
     }
   }
