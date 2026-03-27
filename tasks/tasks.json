@@ -1,0 +1,434 @@
+{
+  "project": "Fullstack Shop MVP",
+  "stack": "Next.js 16 + Convex + Clerk + Stripe",
+  "note": "Convex는 _id, _creationTime을 자동 생성하므로 스키마에 명시하지 않음",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "DB 스키마 구성",
+      "status": "done",
+      "description": "Convex schema.ts에 모든 테이블 정의. _id는 Convex 자동 생성.",
+      "subtasks": [
+        {
+          "id": "1-1",
+          "title": "users 테이블 업데이트",
+          "status": "done",
+          "description": "email, role 필드 추가. externalId 인덱스는 이미 존재.",
+          "fields": [
+            "externalId(string)",
+            "name(string)",
+            "email(optional string)",
+            "role(optional union: user|admin)"
+          ]
+        },
+        {
+          "id": "1-2",
+          "title": "products 테이블 정의",
+          "status": "done",
+          "fields": [
+            "name(string)",
+            "description(string)",
+            "price(number)",
+            "imageUrl(string)",
+            "stock(number)"
+          ]
+        },
+        {
+          "id": "1-3",
+          "title": "cartItems 테이블 정의",
+          "status": "done",
+          "fields": [
+            "userId(id:users)",
+            "productId(id:products)",
+            "quantity(number)"
+          ],
+          "indexes": [
+            "by_user: [userId]",
+            "by_user_and_product: [userId, productId]"
+          ]
+        },
+        {
+          "id": "1-4",
+          "title": "orders 테이블 정의",
+          "status": "done",
+          "fields": [
+            "userId(id:users)",
+            "status(union: pending|paid|shipping|delivered)",
+            "totalAmount(number)",
+            "stripeSessionId(string)"
+          ],
+          "indexes": [
+            "by_user: [userId]",
+            "by_stripeSession: [stripeSessionId]"
+          ]
+        },
+        {
+          "id": "1-5",
+          "title": "orderItems 테이블 정의",
+          "status": "done",
+          "fields": [
+            "orderId(id:orders)",
+            "productId(id:products)",
+            "quantity(number)",
+            "price(number)"
+          ],
+          "indexes": [
+            "by_order: [orderId]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "인증 완성",
+      "status": "done",
+      "description": "Clerk + Convex 유저 연동. webhook 기반으로 구현 완료.",
+      "subtasks": [
+        {
+          "id": "2-1",
+          "title": "users 테이블에 email, role 필드 반영",
+          "status": "done",
+          "description": "upsertFromClerk에서 email, role(기본값: user) 저장 추가"
+        },
+        {
+          "id": "2-2",
+          "title": "CLERK_JWT_ISSUER_DOMAIN 환경변수 설정",
+          "status": "manual",
+          "description": "Convex 대시보드와 .env.local 양쪽에 수동 추가 필요"
+        },
+        {
+          "id": "2-3",
+          "title": "Clerk Webhook 등록",
+          "status": "manual",
+          "description": "Clerk 대시보드에서 /clerk-users-webhook 엔드포인트 등록. CLERK_WEBHOOK_SECRET Convex 대시보드에 추가"
+        },
+        {
+          "id": "2-4",
+          "title": "첫 번째 관리자 설정 (claimFirstAdmin)",
+          "status": "done",
+          "description": "admin이 없을 때 현재 유저를 admin으로 승격하는 mutation. /admin 페이지 UI에서 버튼으로 실행"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "상품(Products) 기능",
+      "status": "done",
+      "subtasks": [
+        {
+          "id": "3-1",
+          "title": "convex/products.ts — 백엔드 함수",
+          "status": "done",
+          "functions": [
+            "list: query — 전체 상품 목록",
+            "getById: query — 상품 상세",
+            "create: mutation (admin) — 상품 등록",
+            "update: mutation (admin) — 상품 수정",
+            "remove: mutation (admin) — 상품 삭제"
+          ]
+        },
+        {
+          "id": "3-2",
+          "title": "/ 홈 페이지 — 상품 목록",
+          "status": "done",
+          "description": "상품 카드 그리드. 이미지, 이름, 가격 표시. 상품 클릭 시 상세 이동"
+        },
+        {
+          "id": "3-3",
+          "title": "/products/[id] — 상품 상세 페이지",
+          "status": "done",
+          "description": "상품 정보 표시. 장바구니 담기 버튼"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "장바구니(Cart) 기능",
+      "status": "done",
+      "subtasks": [
+        {
+          "id": "4-1",
+          "title": "convex/cart.ts — 백엔드 함수",
+          "status": "done",
+          "functions": [
+            "getMyCart: query — 내 장바구니 조회 (상품 정보 join)",
+            "addItem: mutation — 상품 담기 (이미 있으면 수량 증가)",
+            "updateQuantity: mutation — 수량 변경",
+            "removeItem: mutation — 항목 삭제",
+            "clearCart: mutation — 전체 비우기 (결제 완료 후 사용)"
+          ]
+        },
+        {
+          "id": "4-2",
+          "title": "/cart — 장바구니 페이지",
+          "status": "done",
+          "description": "담긴 상품 목록, 수량 변경, 삭제, 합계 금액, 결제 버튼. 로그인 필수"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "결제(Stripe) 기능",
+      "status": "done",
+      "subtasks": [
+        {
+          "id": "5-1",
+          "title": "Stripe 패키지 설치 및 환경변수 설정",
+          "status": "done",
+          "description": "stripe@21 설치. STRIPE_SECRET_KEY는 Convex 환경변수에 수동 설정 필요"
+        },
+        {
+          "id": "5-2",
+          "title": "convex/stripe.ts — Checkout Session 생성 Action",
+          "status": "done",
+          "description": "장바구니 items를 Stripe line_items로 변환. orders 테이블에 pending 상태로 주문 생성. Stripe session URL 반환. use node 분리"
+        },
+        {
+          "id": "5-3",
+          "title": "app/api/stripe-webhook/route.ts — Webhook 핸들러",
+          "status": "done",
+          "description": "checkout.session.completed 이벤트 수신. stripeSessionId로 orders 조회 후 status를 paid로 업데이트. 장바구니 비우기"
+        },
+        {
+          "id": "5-4",
+          "title": "/orders — 주문 내역 페이지",
+          "status": "done",
+          "description": "내 주문 목록. 주문 상태, 금액, 상품 목록 표시. 로그인 필수"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "관리자(Admin) 기능",
+      "status": "done",
+      "subtasks": [
+        {
+          "id": "6-1",
+          "title": "관리자 권한 체크 헬퍼",
+          "status": "done",
+          "description": "convex/users.ts에 requireAdmin 헬퍼 추가. admin이 아니면 throw"
+        },
+        {
+          "id": "6-2",
+          "title": "/admin — 관리자 대시보드",
+          "status": "done",
+          "description": "총 매출, 주문 수, 상품 수 요약 카드. 일별/월별/연별 매출 현황. 권한 없을 때 claimFirstAdmin 버튼 표시"
+        },
+        {
+          "id": "6-3",
+          "title": "/admin/products — 상품 관리 페이지",
+          "status": "done",
+          "description": "상품 목록 테이블. 인라인 폼으로 등록/수정/삭제 UI"
+        },
+        {
+          "id": "6-4",
+          "title": "/admin/orders — 주문 관리 페이지",
+          "status": "done",
+          "description": "전체 주문 목록. 상태 변경 (paid → shipping → delivered)"
+        },
+        {
+          "id": "6-5",
+          "title": "convex/admin.ts — 매출 통계 쿼리",
+          "status": "done",
+          "functions": [
+            "getSalesStats: query — 일별/월별/연별 paid 주문 합계"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "라우트 보호 및 네비게이션",
+      "status": "done",
+      "subtasks": [
+        {
+          "id": "7-1",
+          "title": "proxy.ts 업데이트",
+          "status": "done",
+          "description": "전체 경로 인증 보호. sign-in/sign-up/stripe-webhook만 public 허용"
+        },
+        {
+          "id": "7-2",
+          "title": "공통 헤더(Navbar) 컴포넌트",
+          "status": "done",
+          "description": "로고, 홈, 장바구니(아이템 수 뱃지), 로그인/유저 버튼, 관리자 버튼(admin만). NavbarWrapper로 sign-in 경로에서 자동 숨김"
+        },
+        {
+          "id": "7-3",
+          "title": "로그인 전용 페이지",
+          "status": "done",
+          "description": "왼쪽 브랜딩 패널 + 오른쪽 Clerk SignIn 위젯. 로그인해야 쇼핑몰 접근 가능"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "UI 개선 — 홈 (/) 상품 목록",
+      "status": "done",
+      "subtasks": [
+        {
+          "id": "8-1",
+          "title": "Hero 배너 섹션 추가",
+          "status": "done",
+          "description": "상단 그라데이션 배경 + 슬로건 + CTA 버튼"
+        },
+        {
+          "id": "8-2",
+          "title": "상품 카드 hover 애니메이션",
+          "status": "done",
+          "description": "hover 시 이미지 scale 확대 + 그림자 강화"
+        },
+        {
+          "id": "8-3",
+          "title": "품절 상품 오버레이 뱃지",
+          "status": "done",
+          "description": "품절 시 이미지 흑백 필터 + '품절' 오버레이 표시"
+        },
+        {
+          "id": "8-4",
+          "title": "카드에서 바로 담기 버튼",
+          "status": "done",
+          "description": "상품 카드 hover 시 장바구니 아이콘 버튼 오버레이 표시"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "UI 개선 — 상품 상세 (/products/[id])",
+      "status": "done",
+      "subtasks": [
+        {
+          "id": "9-1",
+          "title": "수량 선택 UI 추가",
+          "status": "done",
+          "description": "- 1 + 버튼으로 수량 선택 후 장바구니 담기"
+        },
+        {
+          "id": "9-2",
+          "title": "바로 구매 버튼",
+          "status": "done",
+          "description": "장바구니 거치지 않고 바로 Stripe Checkout으로 이동"
+        },
+        {
+          "id": "9-3",
+          "title": "상품 설명 탭 UI",
+          "status": "done",
+          "description": "상품정보 / 배송안내 탭으로 구분"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "UI 개선 — 장바구니 (/cart)",
+      "status": "done",
+      "subtasks": [
+        {
+          "id": "10-1",
+          "title": "주문 요약 사이드 패널",
+          "status": "done",
+          "description": "오른쪽에 소계 / 배송비 무료 / 최종금액 패널 추가"
+        },
+        {
+          "id": "10-2",
+          "title": "빈 장바구니 Empty State 개선",
+          "status": "done",
+          "description": "아이콘 + 메시지 + 쇼핑 시작 CTA 버튼"
+        },
+        {
+          "id": "10-3",
+          "title": "전체 삭제 버튼",
+          "status": "done",
+          "description": "장바구니 전체 비우기 버튼 추가"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "UI 개선 — 주문 내역 (/orders)",
+      "status": "done",
+      "subtasks": [
+        {
+          "id": "11-1",
+          "title": "주문 상태 Progress Bar",
+          "status": "done",
+          "description": "pending → paid → shipping → delivered 단계 시각화"
+        },
+        {
+          "id": "11-2",
+          "title": "주문별 상품 이미지 썸네일",
+          "status": "done",
+          "description": "각 주문 카드에 상품 이미지 미리보기 표시"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "UI 개선 — Navbar",
+      "status": "done",
+      "subtasks": [
+        {
+          "id": "12-1",
+          "title": "모바일 햄버거 메뉴",
+          "status": "done",
+          "description": "모바일에서 홈/주문내역/관리자 메뉴 토글"
+        },
+        {
+          "id": "12-2",
+          "title": "스크롤 시 backdrop-blur 효과",
+          "status": "done",
+          "description": "스크롤 내리면 Navbar 배경에 blur 적용"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "UI 개선 — 관리자 대시보드 (/admin)",
+      "status": "done",
+      "subtasks": [
+        {
+          "id": "13-1",
+          "title": "매출 차트 추가",
+          "status": "done",
+          "description": "최근 7일 / 30일 매출 막대 차트 (recharts)"
+        },
+        {
+          "id": "13-2",
+          "title": "최근 주문 위젯",
+          "status": "done",
+          "description": "대시보드에서 최근 주문 5건 바로 확인"
+        },
+        {
+          "id": "13-3",
+          "title": "재고 부족 상품 알림 위젯",
+          "status": "done",
+          "description": "stock < 5인 상품 목록 표시"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "UI 개선 — 공통 디자인 시스템",
+      "status": "done",
+      "subtasks": [
+        {
+          "id": "14-1",
+          "title": "한글 폰트 적용",
+          "status": "done",
+          "description": "Pretendard 또는 Noto Sans KR 전역 적용"
+        },
+        {
+          "id": "14-2",
+          "title": "Toast 알림 컴포넌트",
+          "status": "done",
+          "description": "장바구니 담기 성공, 에러 등 토스트 메시지 표시"
+        },
+        {
+          "id": "14-3",
+          "title": "Empty State 컴포넌트 통일",
+          "status": "done",
+          "description": "아이콘 + 메시지 + CTA 버튼 패턴으로 전체 통일"
+        }
+      ]
+    }
+  ]
+}
