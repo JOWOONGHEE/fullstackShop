@@ -4,9 +4,9 @@ import { v } from "convex/values";
 export default defineSchema({
   users: defineTable({
     name: v.string(),
-    email: v.string(),
+    email: v.optional(v.string()),
     externalId: v.string(),
-    role: v.union(v.literal("user"), v.literal("admin")),
+    role: v.optional(v.union(v.literal("user"), v.literal("admin"))),
   }).index("byExternalId", ["externalId"]),
 
   products: defineTable({

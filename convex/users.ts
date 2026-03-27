@@ -73,7 +73,7 @@ export async function getCurrentUser(ctx: QueryCtx) {
 
 export async function requireAdmin(ctx: QueryCtx) {
   const user = await getCurrentUserOrThrow(ctx);
-  if (user.role !== "admin") throw new Error("Admin access required");
+  if ((user.role ?? "user") !== "admin") throw new Error("Admin access required");
   return user;
 }
 

@@ -12,7 +12,7 @@ export default function Navbar() {
 
   const cartCount = cartItems?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
-  const isAdmin = currentUser?.role === "admin";
+  const isAdmin = (currentUser?.role ?? "user") === "admin";
 
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-6 py-3 flex items-center justify-between">
