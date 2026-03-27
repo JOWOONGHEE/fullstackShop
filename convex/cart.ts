@@ -1,11 +1,12 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { getCurrentUserOrThrow } from "./users";
+import { getCurrentUser, getCurrentUserOrThrow } from "./users";
 
 export const getMyCart = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUserOrThrow(ctx);
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
     const items = await ctx.db
       .query("cartItems")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
