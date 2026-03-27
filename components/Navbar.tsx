@@ -25,8 +25,11 @@ export default function Navbar() {
             홈
           </Link>
           {isAdmin && (
-            <Link href="/admin" className="text-purple-600 hover:text-purple-700 font-medium transition-colors">
-              관리자
+            <Link
+              href="/admin"
+              className="bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors"
+            >
+              관리자 페이지
             </Link>
           )}
         </nav>
