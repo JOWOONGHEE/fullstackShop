@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { ClerkProvider } from "@clerk/nextjs";
 import NavbarWrapper from "@/components/NavbarWrapper";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+import { ToastProvider } from "@/components/Toast";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -30,13 +26,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistMono.variable} antialiased`}>
         <ClerkProvider dynamic>
           <ConvexClientProvider>
-            <NavbarWrapper />
-            {children}
+            <ToastProvider>
+              <NavbarWrapper />
+              {children}
+            </ToastProvider>
           </ConvexClientProvider>
         </ClerkProvider>
       </body>
