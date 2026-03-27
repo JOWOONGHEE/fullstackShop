@@ -8,7 +8,7 @@ import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 export default function Navbar() {
   const { isSignedIn } = useUser();
   const currentUser = useQuery(api.users.current);
-  const cartItems = useQuery(api.cart.getMyCart);
+  const cartItems = useQuery(isSignedIn ? api.cart.getMyCart : "skip");
 
   const cartCount = cartItems?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
